@@ -1,0 +1,68 @@
+# Todo App Constitution - Phase I
+
+## Project Purpose
+Build a command-line todo application that stores tasks in memory and provides basic CRUD operations.
+
+## Core Principles
+
+### 1. Simplicity First
+- Code should be readable and maintainable
+- Avoid over-engineering
+- Use Python's built-in data structures
+
+### 2. Spec-Driven Development
+- All features must be specified before implementation
+- No code written without corresponding specification
+- Specifications are the single source of truth
+
+### 3. Code Quality Standards
+- Python 3.13+ syntax
+- Type hints for all function signatures
+- Docstrings for all classes and public methods
+- Maximum function length: 20 lines
+- Clear variable names (no single-letter variables except loop counters)
+
+### 4. Error Handling
+- Graceful handling of invalid inputs
+- User-friendly error messages
+- No crashes or stack traces shown to users
+
+### 5. Data Management
+- In-memory storage using Python lists/dictionaries
+- No database or file persistence in Phase I
+- Data structure must be simple and extensible
+
+## Technology Stack
+- **Language**: Python 3.13+
+- **Package Manager**: UV
+- **Development Tool**: Claude Code
+- **Spec Tool**: Spec-Kit Plus
+
+## Project Structure
+```
+hackathon-todo-phase1/
+├── specs/
+│   ├── speckit.constitution
+│   ├── speckit.specify
+│   └── speckit.tasks
+├── src/
+│   ├── __init__.py
+│   ├── models.py
+│   └── todo_manager.py
+├── AGENTS.md
+├── CLAUDE.md
+└── README.md
+```
+
+## Constraints
+- No external libraries except Python standard library
+- No file I/O or database operations
+- All data stored in memory
+- Must run in console/terminal
+
+## Success Criteria
+- All 5 basic features working correctly
+- Clean, readable code
+- No runtime errors
+- User-friendly interface
+
