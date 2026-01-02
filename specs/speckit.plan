@@ -1,0 +1,182 @@
+# Technical Plan: Todo Console Application - Phase I
+
+## 1. Architecture Overview
+
+### 1.1 Design Pattern
+**Model-View-Controller (MVC) Variant**
+- **Model**: Task data structure and storage
+- **View**: Console UI and formatting
+- **Controller**: Business logic and operations
+
+### 1.2 Module Structure
+```
+src/
+├── main.py              # Application entry point
+├── models.py            # Task data model
+├── todo_manager.py      # Core business logic
+└── ui.py                # Console interface
+```
+
+## 2. Component Design
+
+### 2.1 models.py - Data Layer
+
+#### Task Class
+```python
+@dataclass
+class Task:
+    """Represents a single todo task."""
+    id: int
+    title: str
+    description: str
+    completed: bool
+    created_at: datetime
+```
+
+**Responsibilities:**
+- Define task data structure
+- Provide type safety
+- Include validation methods
+
+### 2.2 todo_manager.py - Business Logic Layer
+
+#### TodoManager Class
+```python
+class TodoManager:
+    """Manages todo operations and in-memory storage."""
+    
+    def __init__(self):
+        self.tasks: list[Task] = []
+        self.next_id: int = 1
+    
+    def add_task(title: str, description: str) -> Task
+    def get_all_tasks() -> list[Task]
+    def get_task_by_id(task_id: int) -> Task | None
+    def update_task(task_id: int, title: str, description: str) -> Task
+    def delete_task(task_id: int) -> bool
+    def toggle_complete(task_id: int) -> Task
+```
+
+**Responsibilities:**
+- Manage in-memory task list
+- Handle CRUD operations
+- Generate unique task IDs
+- Validate operations
+
+### 2.3 ui.py - Presentation Layer
+
+#### ConsoleUI Class
+```python
+class ConsoleUI:
+    """Handles console input/output and user interaction."""
+    
+    def display_menu() -> None
+    def get_user_choice() -> str
+    def display_tasks(tasks: list[Task]) -> None
+    def get_task_input() -> tuple[str, str]
+    def get_task_id() -> int
+    def show_message(message: str) -> None
+    def show_error(error: str) -> None
+```
+
+**Responsibilities:**
+- Display menu and prompts
+- Accept user input
+- Format and display tasks
+- Show success/error messages
+
+### 2.4 main.py - Application Entry Point
+
+**Responsibilities:**
+- Initialize TodoManager and ConsoleUI
+- Run main application loop
+- Coordinate between UI and manager
+- Handle graceful exit
+
+## 3. Data Flow
+```
+User Input → ConsoleUI → TodoManager → In-Memory Storage
+                ↓              ↓
+           Display ←─────── Return Result
+```
+
+### 3.1 Example Flow: Add Task
+1. User selects "Add Task" from menu
+2. ConsoleUI prompts for title and description
+3. ConsoleUI sends data to TodoManager.add_task()
+4. TodoManager creates Task object with new ID
+5. TodoManager adds to internal list
+6. TodoManager returns created Task
+7. ConsoleUI displays success message
+
+## 4. Error Handling Strategy
+
+### 4.1 Input Validation
+- Empty title → Prompt again
+- Too long title/description → Show error
+- Invalid menu choice → Show options again
+- Invalid task ID → "Task not found"
+
+### 4.2 Exception Handling
+```python
+try:
+    # Operation
+except ValueError as e:
+    ui.show_error(f"Invalid input: {e}")
+except Exception as e:
+    ui.show_error(f"Unexpected error: {e}")
+```
+
+## 5. Implementation Order
+
+### Phase 1: Foundation (Task T-001 to T-003)
+1. Create Task data model
+2. Create TodoManager with storage
+3. Implement add_task operation
+
+### Phase 2: Core Operations (Task T-004 to T-007)
+4. Implement list_tasks operation
+5. Implement update_task operation
+6. Implement delete_task operation
+7. Implement toggle_complete operation
+
+### Phase 3: User Interface (Task T-008 to T-010)
+8. Create ConsoleUI class
+9. Implement menu display and input
+10. Implement task display formatting
+
+### Phase 4: Integration (Task T-011 to T-012)
+11. Create main.py with application loop
+12. Connect all components and test
+
+## 6. Testing Strategy
+
+### Manual Testing Checklist
+- [ ] Add task with valid data
+- [ ] Add task with empty title (should reject)
+- [ ] List tasks when empty
+- [ ] List multiple tasks
+- [ ] Update task with valid ID
+- [ ] Update task with invalid ID
+- [ ] Delete task with valid ID
+- [ ] Delete task with invalid ID
+- [ ] Toggle completion status
+- [ ] Exit application gracefully
+
+## 7. Success Metrics
+
+- All 5 basic operations working correctly
+- No runtime crashes
+- User-friendly error messages
+- Clean, readable code structure
+- Type hints throughout
+- Proper docstrings
+
+## 8. Future Extensibility
+
+Design allows easy addition of:
+- File persistence (Phase II)
+- Task priorities and tags
+- Search and filter
+- Due dates
+- Multiple users
