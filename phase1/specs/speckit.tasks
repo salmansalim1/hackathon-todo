@@ -1,0 +1,241 @@
+# Task Breakdown - Todo Console Application Phase I
+
+## Task Status Key
+- [ ] Not Started
+- [→] In Progress
+- [✓] Completed
+
+---
+
+## T-001: Create Task Data Model
+**Status:** [ ]  
+**Spec Reference:** speckit.specify §US-001, speckit.plan §2.1  
+**File:** src/models.py
+
+### Description
+Create the Task dataclass to represent a single todo item with all required fields.
+
+### Acceptance Criteria
+- [ ] Task class defined with @dataclass decorator
+- [ ] Fields: id (int), title (str), description (str), completed (bool), created_at (datetime)
+- [ ] Type hints for all fields
+- [ ] Docstring explaining the class purpose
+- [ ] __str__ method for readable output
+
+### Implementation Notes
+```python
+from dataclasses import dataclass
+from datetime import datetime
+
+@dataclass
+class Task:
+    """Represents a single todo task."""
+    id: int
+    title: str
+    description: str
+    completed: bool
+    created_at: datetime
+```
+
+---
+
+## T-002: Create TodoManager Class Foundation
+**Status:** [ ]  
+**Spec Reference:** speckit.plan §2.2  
+**File:** src/todo_manager.py
+
+### Description
+Create TodoManager class with initialization and internal storage.
+
+### Acceptance Criteria
+- [ ] TodoManager class defined
+- [ ] __init__ method with empty tasks list
+- [ ] next_id counter starting at 1
+- [ ] Type hints for instance variables
+- [ ] Class docstring
+
+---
+
+## T-003: Implement Add Task Operation
+**Status:** [ ]  
+**Spec Reference:** speckit.specify §US-001, speckit.plan §2.2  
+**File:** src/todo_manager.py
+
+### Description
+Implement the add_task method to create and store new tasks.
+
+### Acceptance Criteria
+- [ ] add_task(title: str, description: str = "") method
+- [ ] Validates title is not empty
+- [ ] Validates title length (1-200 chars)
+- [ ] Validates description length (max 1000 chars)
+- [ ] Generates unique ID automatically
+- [ ] Sets completed=False by default
+- [ ] Sets created_at to current datetime
+- [ ] Adds task to internal list
+- [ ] Returns the created Task object
+- [ ] Raises ValueError for invalid inputs
+
+---
+
+## T-004: Implement List Tasks Operation
+**Status:** [ ]  
+**Spec Reference:** speckit.specify §US-002, speckit.plan §2.2  
+**File:** src/todo_manager.py
+
+### Description
+Implement get_all_tasks method to retrieve all stored tasks.
+
+### Acceptance Criteria
+- [ ] get_all_tasks() -> list[Task] method
+- [ ] Returns all tasks in the list
+- [ ] Returns empty list if no tasks
+- [ ] Does not modify internal storage
+
+---
+
+## T-005: Implement Get Task By ID
+**Status:** [ ]  
+**Spec Reference:** speckit.plan §2.2  
+**File:** src/todo_manager.py
+
+### Description
+Helper method to retrieve a single task by ID.
+
+### Acceptance Criteria
+- [ ] get_task_by_id(task_id: int) -> Task | None method
+- [ ] Returns Task if found
+- [ ] Returns None if not found
+- [ ] Does not raise exceptions
+
+---
+
+## T-006: Implement Update Task Operation
+**Status:** [ ]  
+**Spec Reference:** speckit.specify §US-003, speckit.plan §2.2  
+**File:** src/todo_manager.py
+
+### Description
+Implement update_task method to modify existing tasks.
+
+### Acceptance Criteria
+- [ ] update_task(task_id: int, title: str | None, description: str | None) method
+- [ ] Validates task exists
+- [ ] Updates title if provided
+- [ ] Updates description if provided
+- [ ] Validates new title/description if changed
+- [ ] Returns updated Task object
+- [ ] Raises ValueError if task not found or validation fails
+
+---
+
+## T-007: Implement Delete Task Operation
+**Status:** [ ]  
+**Spec Reference:** speckit.specify §US-004, speckit.plan §2.2  
+**File:** src/todo_manager.py
+
+### Description
+Implement delete_task method to remove tasks.
+
+### Acceptance Criteria
+- [ ] delete_task(task_id: int) -> bool method
+- [ ] Removes task from list if exists
+- [ ] Returns True if deleted
+- [ ] Returns False if task not found
+- [ ] Does not raise exceptions
+
+---
+
+## T-008: Implement Toggle Complete Operation
+**Status:** [ ]  
+**Spec Reference:** speckit.specify §US-005, speckit.plan §2.2  
+**File:** src/todo_manager.py
+
+### Description
+Implement toggle_complete to change task completion status.
+
+### Acceptance Criteria
+- [ ] toggle_complete(task_id: int) -> Task method
+- [ ] Finds task by ID
+- [ ] Toggles completed field (True↔False)
+- [ ] Returns updated Task
+- [ ] Raises ValueError if task not found
+
+---
+
+## T-009: Create ConsoleUI Class
+**Status:** [ ]  
+**Spec Reference:** speckit.plan §2.3  
+**File:** src/ui.py
+
+### Description
+Create ConsoleUI class for handling all console interactions.
+
+### Acceptance Criteria
+- [ ] ConsoleUI class defined
+- [ ] display_menu() method showing options
+- [ ] get_user_choice() -> str method for input
+- [ ] show_message(message: str) method
+- [ ] show_error(error: str) method
+- [ ] Class docstring
+
+---
+
+## T-010: Implement Task Display
+**Status:** [ ]  
+**Spec Reference:** speckit.specify §US-002, speckit.plan §2.3  
+**File:** src/ui.py
+
+### Description
+Implement task display formatting in ConsoleUI.
+
+### Acceptance Criteria
+- [ ] display_tasks(tasks: list[Task]) method
+- [ ] Shows "No tasks" if empty
+- [ ] Displays task count
+- [ ] Formats each task: [ID] Title (Status)
+- [ ] Shows ✓ for completed, ○ for pending
+- [ ] Readable formatting with borders/spacing
+
+---
+
+## T-011: Implement Input Helpers
+**Status:** [ ]  
+**Spec Reference:** speckit.plan §2.3  
+**File:** src/ui.py
+
+### Description
+Add helper methods for getting user input.
+
+### Acceptance Criteria
+- [ ] get_task_input() -> tuple[str, str] for title and description
+- [ ] get_task_id() -> int for task ID input
+- [ ] Input validation and error handling
+- [ ] Clear prompts for user
+
+---
+
+## T-012: Create Main Application Loop
+**Status:** [ ]  
+**Spec Reference:** speckit.plan §2.4  
+**File:** src/main.py
+
+### Description
+Create main.py with application entry point and main loop.
+
+### Acceptance Criteria
+- [ ] main() function defined
+- [ ] Initializes TodoManager and ConsoleUI
+- [ ] Runs loop until user exits
+- [ ] Displays menu each iteration
+- [ ] Routes user choice to appropriate manager method
+- [ ] Handles errors gracefully
+- [ ] if __name__ == "__main__": main()
+
+---
+
+## Summary
+- **Total Tasks:** 12
+- **Estimated Time:** 4-6 hours
+- **Dependencies:** T-001 and T-002 must be completed first
+- **Priority Order:** T-001 → T-002 → T-003 → T-004 → ... → T-012

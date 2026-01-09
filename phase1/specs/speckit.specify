@@ -1,0 +1,91 @@
+# Todo App Specification - Phase I
+
+## Overview
+A command-line todo application with in-memory storage supporting 5 basic operations.
+
+## User Stories
+
+### US-001: Add Task
+**As a** user  
+**I want to** add a new task with title and description  
+**So that** I can track things I need to do
+
+**Acceptance Criteria:**
+- Task must have a title (required, 1-200 characters)
+- Task can have a description (optional, max 1000 characters)
+- Task gets a unique ID automatically
+- Task status defaults to "pending"
+- System confirms task was added
+
+### US-002: View Tasks
+**As a** user  
+**I want to** see all my tasks  
+**So that** I know what needs to be done
+
+**Acceptance Criteria:**
+- Display all tasks with ID, title, status
+- Show task count
+- Indicate if list is empty
+- Format should be readable
+
+### US-003: Update Task
+**As a** user  
+**I want to** modify a task's title or description  
+**So that** I can correct or clarify tasks
+
+**Acceptance Criteria:**
+- User can update title
+- User can update description
+- Task ID remains unchanged
+- System confirms update
+
+### US-004: Delete Task
+**As a** user  
+**I want to** remove a task  
+**So that** I can clean up my list
+
+**Acceptance Criteria:**
+- User provides task ID
+- Task is removed from list
+- System confirms deletion
+- Error if task ID doesn't exist
+
+### US-005: Mark Complete
+**As a** user  
+**I want to** mark tasks as complete or incomplete  
+**So that** I can track my progress
+
+**Acceptance Criteria:**
+- User provides task ID
+- Status toggles between "pending" and "completed"
+- System confirms status change
+- Error if task ID doesn't exist
+
+## Data Model
+
+### Task
+```python
+{
+    "id": int,           # Auto-generated unique ID
+    "title": str,        # Required, 1-200 chars
+    "description": str,  # Optional, max 1000 chars
+    "status": str,       # "pending" or "completed"
+    "created_at": str    # ISO format timestamp
+}
+```
+
+## Interface Commands
+
+| Command | Action |
+|---------|--------|
+| `1` or `add` | Add new task |
+| `2` or `list` | View all tasks |
+| `3` or `update` | Update existing task |
+| `4` or `delete` | Delete task |
+| `5` or `complete` | Toggle completion status |
+| `6` or `exit` | Exit application |
+
+## Error Handling
+- Invalid task ID: "Task not found"
+- Empty title: "Title is required"
+- Invalid input: "Invalid option, please try again"
