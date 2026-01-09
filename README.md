@@ -1,92 +1,135 @@
-# Todo Console Application - Phase I
+# Hackathon II - Todo App (Phase II Complete)
 
-A command-line todo application built using Spec-Driven Development with Claude Code.
+A full-stack todo application built with Next.js, FastAPI, and PostgreSQL using Spec-Driven Development.
 
-## Features
+## 🏗️ Architecture
 
-- ✅ Add Task - Create new todo items
-- ✅ Delete Task - Remove tasks from the list
-- ✅ Update Task - Modify existing task details
-- ✅ View Task List - Display all tasks
-- ✅ Mark as Complete - Toggle task completion status
+- **Frontend**: Next.js 15 (App Router) + TypeScript + Tailwind CSS
+- **Backend**: Python FastAPI + SQLModel
+- **Database**: Neon Serverless PostgreSQL
+- **Authentication**: Better Auth with JWT
 
-## Tech Stack
-
-- Python 3.13+
-- Spec-Driven Development (SDD)
-- Claude Code
-- Spec-Kit Plus
-
-## Project Structure
+## 📁 Project Structure
 ```
-hackathon-todo-phase1/
-├── src/
-│   ├── models.py          # Task data model and storage
-│   ├── todo_manager.py    # Business logic controller
-│   ├── ui.py              # Console UI interface
-│   └── main.py            # Application entry point
-├── specs/                 # Specification files
-├── README.md
-└── CLAUDE.md
+hackathon-todo/
+├── phase1/              # Console app (Phase I)
+├── phase2/
+│   ├── backend/         # FastAPI server
+│   │   ├── main.py
+│   │   ├── models.py
+│   │   ├── database.py
+│   │   └── requirements.txt
+│   └── frontend/        # Next.js app
+│       ├── app/
+│       ├── components/
+│       └── lib/
+├── specs/               # Specifications
+└── README.md
 ```
 
-## Setup Instructions
+## 🚀 Local Development Setup
 
-1. Clone the repository:
+### Prerequisites
+- Python 3.11+
+- Node.js 18+
+- PostgreSQL (Neon account)
+
+### Backend Setup
 ```bash
-git clone https://github.com/salmansalim1/hackathon-todo.git
-cd hackathon-todo
+cd phase2/backend
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Create .env file (copy from .env.example)
+cp .env.example .env
+# Edit .env with your Neon database credentials
+
+# Run server
+uvicorn main:app --reload --port 8000
 ```
 
-2. Run the application:
+Backend will run at: `http://localhost:8000`
+
+### Frontend Setup
 ```bash
-python3 src/main.py
+cd phase2/frontend
+
+# Install dependencies
+npm install
+
+# Create .env.local file (copy from .env.example)
+cp .env.example .env.local
+# Edit .env.local with your configuration
+
+# Run development server
+npm run dev
 ```
 
-## Usage
+Frontend will run at: `http://localhost:3000`
 
-The application provides an interactive menu with the following options:
+## 🔑 Environment Variables
 
-1. Add Task - Create a new task with title and optional description
-2. View All Tasks - Display all tasks with their status
-3. View Task by ID - View details of a specific task
-4. Update Task - Modify task title or description
-5. Delete Task - Remove a task from the list
-6. Mark Task Complete - Mark a task as done
-7. Mark Task Incomplete - Reopen a completed task
-8. Toggle Task Status - Switch between complete/incomplete
-9. View Statistics - See task completion statistics
-10. View Pending Tasks - Show only incomplete tasks
-11. View Completed Tasks - Show only completed tasks
-0. Exit - Close the application
+### Backend (.env)
+- `DATABASE_URL`: Neon PostgreSQL connection string
+- `SECRET_KEY`: JWT secret key (min 32 characters)
+- `CORS_ORIGINS`: Allowed frontend URLs
 
-## Development Approach
+### Frontend (.env.local)
+- `NEXT_PUBLIC_API_URL`: Backend API URL
+- `BETTER_AUTH_SECRET`: Better Auth secret key
+- `DATABASE_URL`: Database connection for Better Auth
 
-This project was built using **Spec-Driven Development (SDD)**:
-1. Write specifications in `speckit.specify`
-2. Generate technical plan in `speckit.plan`
-3. Break down into tasks in `speckit.tasks`
-4. Implement using Claude Code
+## 📦 API Endpoints
 
-## Architecture
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/{user_id}/tasks` | List all tasks |
+| POST | `/api/{user_id}/tasks` | Create a new task |
+| GET | `/api/{user_id}/tasks/{id}` | Get task details |
+| PUT | `/api/{user_id}/tasks/{id}` | Update a task |
+| DELETE | `/api/{user_id}/tasks/{id}` | Delete a task |
+| PATCH | `/api/{user_id}/tasks/{id}/complete` | Toggle completion |
 
-**Model-View-Controller (MVC) Pattern**:
-- **Model** (`models.py`): Task data structure and in-memory storage
-- **Controller** (`todo_manager.py`): Business logic and operations
-- **View** (`ui.py`): Console interface and user interaction
-- **Main** (`main.py`): Application entry point
+## ✅ Completed Features (Basic Level)
 
-## Phase I Completion
+1. ✅ Add Task - Create new todo items
+2. ✅ Delete Task - Remove tasks from the list
+3. ✅ Update Task - Modify existing task details
+4. ✅ View Task List - Display all tasks
+5. ✅ Mark as Complete - Toggle task completion status
+6. ✅ Authentication - User signup/signin with Better Auth
 
-- [x] T-001: Implement Task Data Model
-- [x] T-002: Implement Todo Manager Controller
-- [x] T-003: Implement Console UI
-- [x] T-004: Create Main Entry Point
+## 🌐 Deployment
 
-## Author
+### Backend (Render.com)
+- Deployed at: `https://hackathon-todo.onrender.com`
+
+### Frontend (Vercel)
+- Deployed at: `https://your-app.vercel.app`
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
+
+## 📝 Specifications
+
+All specifications are maintained in the `/specs` directory following Spec-Driven Development principles.
+
+## 🛠️ Technologies Used
+
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Backend**: FastAPI, SQLModel, Pydantic
+- **Database**: Neon PostgreSQL
+- **Auth**: Better Auth, JWT
+- **Deployment**: Vercel (Frontend), Render (Backend)
+
+## 👤 Author
 
 Salman Salim (@salmansalim1)
 
-## License
+## 📄 License
 
-This project is part of the Panaversity Hackathon II.
+This project is part of Panaversity Hackathon II.
