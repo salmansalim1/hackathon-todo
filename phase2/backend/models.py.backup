@@ -1,0 +1,62 @@
+# backend/models.py
+# [Task]: T-010 - Define SQLModel database models
+# [From]: specs/database/schema.md
+
+from sqlmodel import SQLModel, Field
+from datetime import datetime
+from typing import Optional
+
+# Database Model
+class Task(SQLModel, table=True):
+    """
+    Task database model.
+    Represents a todo item in the database.
+    """
+    __tablename__ = "tasks"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: str = Field(foreign_key="users.id", index=True)
+    title: str = Field(min_length=1, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=1000)
+    completed: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+# Request Models
+class TaskCreate(SQLModel):
+    """Request model for creating a task"""
+    title: str = Field(min_length=1, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=1000)
+
+class TaskUpdate(SQLModel):
+    """Request model for updating a task"""
+    title: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=1000)
+    completed: Optional[bool] = None
+
+# Response Model
+class TaskResponse(SQLModel):
+    """Response model for task data"""
+    id: int
+    user_id: str
+    title: str
+    description: Optional[str]
+    completed: bool
+    created_at: datetime
+    updated_at: datetime
+
+# User Model (Better Auth manages this, but we define it for reference)
+class User(SQLModel, table=True):
+    """
+    User database model.
+    Managed by Better Auth.
+    """
+    __tablename__ = "users"
+    
+    id: str = Field(primary_key=True)
+    email: str = Field(unique=True, index=True)
+    name: Optional[str] = None
+    emailVerified: bool = Field(default=False)
+    image: Optional[str] = None
+    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    updatedAt: datetime = Field(default_factory=datetime.utcnow)

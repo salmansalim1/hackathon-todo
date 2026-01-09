@@ -1,0 +1,42 @@
+# backend/database.py
+# [Task]: T-011 - Setup database connection and session management
+# [From]: specs/database/schema.md
+
+from sqlmodel import SQLModel, create_engine, Session
+import os
+
+# Get database URL from environment
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is not set")
+
+# Create engine
+# For Neon, we need to add sslmode=require
+if "sslmode" not in DATABASE_URL:
+    DATABASE_URL += "?sslmode=require"
+
+engine = create_engine(
+    DATABASE_URL,
+    echo=True,  # Set to False in production
+    pool_pre_ping=True,  # Verify connections before using
+    pool_size=5,
+    max_overflow=10
+)
+
+def init_db():
+    """
+    Initialize database tables.
+    Called on application startup.
+    """
+    SQLModel.metadata.create_all(engine)
+
+def get_session():
+    """
+    Dependency for getting database session.
+    Used in FastAPI route dependencies.
+    """
+    with Session(engine) as session:
+        yield session
+```
+
