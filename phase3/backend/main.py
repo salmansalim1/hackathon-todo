@@ -18,7 +18,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://0.0.0.0:3000",
-        "https://hackathon-todo-lac.vercel.app",
+        "https://*.vercel.app",
         "https://hackathon-todo-chatbot.vercel.app/",  # Allow all Vercel preview deployments
     ],
     allow_credentials=True,
