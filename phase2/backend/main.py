@@ -1,278 +1,107 @@
-from fastapi import FastAPI, HTTPException, Depends, Header
+"""
+FastAPI Backend for Todo Application - Phase II
+With Better Auth JWT Integration
+"""
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
+from typing import List, Optional
 from contextlib import asynccontextmanager
 import os
-from datetime import datetime, timedelta
-import jwt
-from passlib.context import CryptContext
-from pydantic import BaseModel, EmailStr
-from typing import Optional
 
-from database import init_db, get_session
-from models import User, Task
-
-# JWT Configuration
-SECRET_KEY = "9be022a8bfd761d7eb7ca5a3ee84acbf620c7b99308ae9aceb4cad3224fe1bc6"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_DAYS = 7
-
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from db import get_session, create_db_and_tables
+from models import Task, TaskCreate, TaskUpdate
+from auth import verify_jwt_token, verify_user_access
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize database on startup"""
-    init_db()
+    create_db_and_tables()
     yield
 
 app = FastAPI(
     title="Todo API",
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan
 )
 
-# CORS Configuration
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "*",  # Allow all origins for now - will restrict after Vercel deployment
+        "http://localhost:3000",  # Local development
+        os.getenv("FRONTEND_URL", "http://localhost:3000")  # Production
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ==================== Auth Models ====================
-
-class SignupRequest(BaseModel):
-    email: EmailStr
-    password: str
-    name: str
-
-class SigninRequest(BaseModel):
-    email: EmailStr
-    password: str
-
-class AuthResponse(BaseModel):
-    user: dict
-    token: str
-
-class TaskCreate(BaseModel):
-    title: str
-    description: Optional[str] = None
-
-class TaskUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    completed: Optional[bool] = None
-
-# ==================== Auth Utilities ====================
-
-def hash_password(password: str) -> str:
-    """Hash password using bcrypt"""
-    return pwd_context.hash(password)
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify password against hash"""
-    return pwd_context.verify(plain_password, hashed_password)
-
-def create_access_token(user_id: str) -> str:
-    """Create JWT access token"""
-    expire = datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
-    to_encode = {"sub": user_id, "exp": expire}
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-def verify_token(token: str) -> str:
-    """Verify JWT token and return user_id"""
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        return user_id
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-def get_current_user(
-    authorization: str = Header(None),
-    session: Session = Depends(get_session)
-) -> User:
-    """Get current authenticated user"""
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Missing authorization header")
-    
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid authorization header")
-    
-    token = authorization.replace("Bearer ", "")
-    user_id = verify_token(token)
-    
-    user = session.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-    
-    return user
-
-# ==================== Root & Health Check ====================
-
 @app.get("/")
-async def root():
-    return {
-        "message": "Todo API is running",
-        "version": "1.0.0",
-        "status": "healthy"
-    }
-
-@app.get("/health")
-async def health_check(session: Session = Depends(get_session)):
+def root():
     """Health check endpoint"""
-    try:
-        # Test database connection
-        session.exec(select(User).limit(1))
-        return {"status": "healthy", "database": "connected"}
-    except Exception as e:
-        return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
+    return {"status": "ok", "message": "Todo API is running"}
 
-# ==================== Auth Endpoints ====================
-
-@app.post("/api/auth/signup", response_model=AuthResponse)
-async def signup(request: SignupRequest, session: Session = Depends(get_session)):
-    """Register a new user"""
-    try:
-        # Check if user already exists
-        existing_user = session.exec(
-            select(User).where(User.email == request.email)
-        ).first()
-        
-        if existing_user:
-            raise HTTPException(status_code=400, detail="Email already registered")
-        
-        # Create new user
-        hashed_password = hash_password(request.password)
-        user = User(
-            email=request.email,
-            password=hashed_password,
-            name=request.name
-        )
-        
-        session.add(user)
-        session.commit()
-        session.refresh(user)
-        
-        # Generate token
-        token = create_access_token(user.id)
-        
-        return {
-            "user": {
-                "id": user.id,
-                "email": user.email,
-                "name": user.name
-            },
-            "token": token
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        session.rollback()
-        print(f"Signup error: {e}")
-        raise HTTPException(status_code=500, detail=f"Signup failed: {str(e)}")
-
-@app.post("/api/auth/signin", response_model=AuthResponse)
-async def signin(request: SigninRequest, session: Session = Depends(get_session)):
-    """Sign in existing user"""
-    try:
-        # Find user
-        user = session.exec(
-            select(User).where(User.email == request.email)
-        ).first()
-        
-        if not user or not verify_password(request.password, user.password):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-        
-        # Generate token
-        token = create_access_token(user.id)
-        
-        return {
-            "user": {
-                "id": user.id,
-                "email": user.email,
-                "name": user.name
-            },
-            "token": token
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"Signin error: {e}")
-        raise HTTPException(status_code=500, detail=f"Signin failed: {str(e)}")
-
-# ==================== Task Endpoints ====================
-
-@app.get("/api/{user_id}/tasks")
-async def list_tasks(
+@app.get("/api/{user_id}/tasks", response_model=List[Task])
+def get_tasks(
     user_id: str,
-    status: str = "all",
-    current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
+    status: Optional[str] = "all",
+    session: Session = Depends(get_session),
+    auth_user: dict = Depends(verify_jwt_token)
 ):
-    """List all tasks for authenticated user"""
-    # Verify user_id matches authenticated user
-    if user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    """
+    Get all tasks for the authenticated user
+    Query params: status (all | pending | completed)
+    """
+    # Verify user has access to this user_id
+    verify_user_access(user_id, auth_user)
     
     # Build query
     query = select(Task).where(Task.user_id == user_id)
     
-    if status == "completed":
-        query = query.where(Task.completed == True)
-    elif status == "pending":
+    # Filter by status if specified
+    if status == "pending":
         query = query.where(Task.completed == False)
+    elif status == "completed":
+        query = query.where(Task.completed == True)
     
+    # Execute and return
     tasks = session.exec(query).all()
     return tasks
 
-@app.post("/api/{user_id}/tasks")
-async def create_task(
+@app.post("/api/{user_id}/tasks", response_model=Task)
+def create_task(
     user_id: str,
-    task: TaskCreate,
-    current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
+    task_data: TaskCreate,
+    session: Session = Depends(get_session),
+    auth_user: dict = Depends(verify_jwt_token)
 ):
-    """Create a new task"""
-    if user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    """Create a new task for the authenticated user"""
+    verify_user_access(user_id, auth_user)
     
-    try:
-        new_task = Task(
-            user_id=user_id,
-            title=task.title,
-            description=task.description
-        )
-        
-        session.add(new_task)
-        session.commit()
-        session.refresh(new_task)
-        
-        return new_task
-    except Exception as e:
-        session.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to create task: {str(e)}")
+    # Create task
+    task = Task(
+        user_id=user_id,
+        title=task_data.title,
+        description=task_data.description,
+        completed=False
+    )
+    
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+    
+    return task
 
-@app.get("/api/{user_id}/tasks/{task_id}")
-async def get_task(
+@app.get("/api/{user_id}/tasks/{task_id}", response_model=Task)
+def get_task(
     user_id: str,
     task_id: int,
-    current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    auth_user: dict = Depends(verify_jwt_token)
 ):
-    """Get task details"""
-    if user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    """Get a specific task by ID"""
+    verify_user_access(user_id, auth_user)
     
     task = session.get(Task, task_id)
     if not task or task.user_id != user_id:
@@ -280,91 +109,70 @@ async def get_task(
     
     return task
 
-@app.put("/api/{user_id}/tasks/{task_id}")
-async def update_task(
+@app.put("/api/{user_id}/tasks/{task_id}", response_model=Task)
+def update_task(
     user_id: str,
     task_id: int,
-    task_update: TaskUpdate,
-    current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
+    task_data: TaskUpdate,
+    session: Session = Depends(get_session),
+    auth_user: dict = Depends(verify_jwt_token)
 ):
-    """Update a task"""
-    if user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    """Update a task's title or description"""
+    verify_user_access(user_id, auth_user)
     
     task = session.get(Task, task_id)
     if not task or task.user_id != user_id:
         raise HTTPException(status_code=404, detail="Task not found")
     
-    try:
-        if task_update.title is not None:
-            task.title = task_update.title
-        if task_update.description is not None:
-            task.description = task_update.description
-        if task_update.completed is not None:
-            task.completed = task_update.completed
-        
-        task.updated_at = datetime.utcnow()
-        session.add(task)
-        session.commit()
-        session.refresh(task)
-        
-        return task
-    except Exception as e:
-        session.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to update task: {str(e)}")
+    # Update fields if provided
+    if task_data.title is not None:
+        task.title = task_data.title
+    if task_data.description is not None:
+        task.description = task_data.description
+    
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+    
+    return task
 
 @app.delete("/api/{user_id}/tasks/{task_id}")
-async def delete_task(
+def delete_task(
     user_id: str,
     task_id: int,
-    current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    auth_user: dict = Depends(verify_jwt_token)
 ):
     """Delete a task"""
-    if user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    verify_user_access(user_id, auth_user)
     
     task = session.get(Task, task_id)
     if not task or task.user_id != user_id:
         raise HTTPException(status_code=404, detail="Task not found")
     
-    try:
-        session.delete(task)
-        session.commit()
-        return {"message": "Task deleted successfully"}
-    except Exception as e:
-        session.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to delete task: {str(e)}")
+    session.delete(task)
+    session.commit()
+    
+    return {"status": "deleted", "task_id": task_id}
 
-@app.patch("/api/{user_id}/tasks/{task_id}/complete")
-async def toggle_complete(
+@app.patch("/api/{user_id}/tasks/{task_id}/complete", response_model=Task)
+def toggle_complete(
     user_id: str,
     task_id: int,
-    current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    auth_user: dict = Depends(verify_jwt_token)
 ):
     """Toggle task completion status"""
-    if user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    verify_user_access(user_id, auth_user)
     
     task = session.get(Task, task_id)
     if not task or task.user_id != user_id:
         raise HTTPException(status_code=404, detail="Task not found")
     
-    try:
-        task.completed = not task.completed
-        task.updated_at = datetime.utcnow()
-        session.add(task)
-        session.commit()
-        session.refresh(task)
-        
-        return task
-    except Exception as e:
-        session.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to toggle task: {str(e)}")
-
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    task.completed = not task.completed
+    
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+    
+    return task

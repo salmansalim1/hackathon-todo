@@ -1,73 +1,80 @@
-from fastapi import APIRouter, HTTPException, Depends
-from sqlmodel import Session, select
-from pydantic import BaseModel, EmailStr
-from passlib.context import CryptContext
-from database import get_session
-from models import User
+"""
+JWT Authentication for FastAPI Backend
+Integrates with Better Auth tokens from Next.js frontend
+"""
+from fastapi import HTTPException, Security, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+import jwt
+import os
+from datetime import datetime
 
-router = APIRouter()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+security = HTTPBearer()
 
-class SignupRequest(BaseModel):
-    email: EmailStr
-    password: str
-    name: str
+# Get secret from environment - MUST match Better Auth secret
+JWT_SECRET = os.getenv("BETTER_AUTH_SECRET", "your-secret-key-change-this")
+JWT_ALGORITHM = "HS256"
 
-class SigninRequest(BaseModel):
-    email: EmailStr
-    password: str
+def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Security(security)) -> dict:
+    """
+    Verify JWT token from Authorization: Bearer <token> header
+    Returns decoded token payload with user information
+    """
+    try:
+        token = credentials.credentials
+        
+        # Decode and verify JWT
+        payload = jwt.decode(
+            token, 
+            JWT_SECRET, 
+            algorithms=[JWT_ALGORITHM]
+        )
+        
+        # Check token expiration
+        exp = payload.get("exp")
+        if exp and datetime.utcfromtimestamp(exp) < datetime.utcnow():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has expired"
+            )
+        
+        # Extract user info
+        user_id = payload.get("sub") or payload.get("userId")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token: missing user ID"
+            )
+        
+        return {
+            "user_id": user_id,
+            "email": payload.get("email"),
+            "name": payload.get("name")
+        }
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired"
+        )
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid token: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Authentication failed: {str(e)}"
+        )
 
-class UserResponse(BaseModel):
-    id: str
-    email: str
-    name: str
-
-@router.post("/signup", response_model=UserResponse)
-def signup(request: SignupRequest, session: Session = Depends(get_session)):
-    # Check if user already exists
-    existing_user = session.exec(
-        select(User).where(User.email == request.email)
-    ).first()
-    
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    # Hash password
-    hashed_password = pwd_context.hash(request.password)
-    
-    # Create new user
-    new_user = User(
-        email=request.email,
-        name=request.name,
-        hashed_password=hashed_password
-    )
-    
-    session.add(new_user)
-    session.commit()
-    session.refresh(new_user)
-    
-    return UserResponse(
-        id=new_user.id,
-        email=new_user.email,
-        name=new_user.name
-    )
-
-@router.post("/signin", response_model=UserResponse)
-def signin(request: SigninRequest, session: Session = Depends(get_session)):
-    # Find user
-    user = session.exec(
-        select(User).where(User.email == request.email)
-    ).first()
-    
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    # Verify password
-    if not pwd_context.verify(request.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    return UserResponse(
-        id=user.id,
-        email=user.email,
-        name=user.name
-    )
+def verify_user_access(user_id_from_path: str, auth_user: dict) -> bool:
+    """
+    Verify that the authenticated user matches the user_id in the URL path
+    Prevents users from accessing other users' data
+    """
+    if auth_user["user_id"] != user_id_from_path:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to access this user's data"
+        )
+    return True

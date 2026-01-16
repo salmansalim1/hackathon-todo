@@ -1,100 +1,70 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-export interface Task {
-  id: number;
-  user_id: string;
-  title: string;
-  description?: string;
-  completed: boolean;
-  created_at: string;
-  updated_at: string;
+// Get JWT token from cookie
+function getToken(): string | null {
+  const cookies = document.cookie.split(";");
+  const tokenCookie = cookies.find((c) => c.trim().startsWith("better-auth.session_token="));
+  if (!tokenCookie) return null;
+  return tokenCookie.split("=")[1];
 }
 
-export interface TaskCreate {
-  title: string;
-  description?: string;
+async function fetchWithAuth(url: string, options: RequestInit = {}) {
+  const token = getToken();
+  
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.statusText}`);
+  }
+
+  return response.json();
 }
 
-export interface TaskUpdate {
-  title?: string;
-  description?: string;
-  completed?: boolean;
-}
+export const api = {
+  async getTasks(userId: string, status: string = "all") {
+    return fetchWithAuth(`${API_URL}/api/${userId}/tasks?status=${status}`);
+  },
 
-class APIClient {
-  private async getToken(): Promise<string | null> {
-    try {
-      const response = await fetch("/api/auth/get-session");
-      const data = await response.json();
-      return data?.session?.token || null;
-    } catch (error) {
-      console.error("Failed to get token:", error);
-      return null;
-    }
-  }
-
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const token = await this.getToken();
-    
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      ...options.headers,
-    };
-
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: "Unknown error" }));
-      throw new Error(error.detail || `HTTP ${response.status}`);
-    }
-
-    return response.json();
-  }
-
-  async getTasks(userId: string, status?: "all" | "pending" | "completed"): Promise<Task[]> {
-    const params = new URLSearchParams();
-    if (status && status !== "all") {
-      params.append("status", status);
-    }
-    const query = params.toString() ? `?${params.toString()}` : "";
-    return this.request<Task[]>(`/api/${userId}/tasks${query}`);
-  }
-
-  async createTask(userId: string, task: TaskCreate): Promise<Task> {
-    return this.request<Task>(`/api/${userId}/tasks`, {
+  async createTask(userId: string, data: { title: string; description?: string }) {
+    return fetchWithAuth(`${API_URL}/api/${userId}/tasks`, {
       method: "POST",
-      body: JSON.stringify(task),
+      body: JSON.stringify(data),
     });
-  }
+  },
 
-  async updateTask(userId: string, taskId: number, updates: TaskUpdate): Promise<Task> {
-    return this.request<Task>(`/api/${userId}/tasks/${taskId}`, {
+  async getTask(userId: string, taskId: number) {
+    return fetchWithAuth(`${API_URL}/api/${userId}/tasks/${taskId}`);
+  },
+
+  async updateTask(
+    userId: string,
+    taskId: number,
+    data: { title?: string; description?: string }
+  ) {
+    return fetchWithAuth(`${API_URL}/api/${userId}/tasks/${taskId}`, {
       method: "PUT",
-      body: JSON.stringify(updates),
+      body: JSON.stringify(data),
     });
-  }
+  },
 
-  async deleteTask(userId: string, taskId: number): Promise<void> {
-    await this.request<void>(`/api/${userId}/tasks/${taskId}`, {
+  async deleteTask(userId: string, taskId: number) {
+    return fetchWithAuth(`${API_URL}/api/${userId}/tasks/${taskId}`, {
       method: "DELETE",
     });
-  }
+  },
 
-  async toggleComplete(userId: string, taskId: number): Promise<Task> {
-    return this.request<Task>(`/api/${userId}/tasks/${taskId}/complete`, {
+  async toggleComplete(userId: string, taskId: number) {
+    return fetchWithAuth(`${API_URL}/api/${userId}/tasks/${taskId}/complete`, {
       method: "PATCH",
     });
-  }
-}
-
-export const api = new APIClient();
+  },
+};
