@@ -23,7 +23,7 @@ export default function ChatPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/${userId}/chat`, {
+      const response = await fetch(`https://hackathon-todo-backend-jjuf.onrender.com/api/${userId}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
