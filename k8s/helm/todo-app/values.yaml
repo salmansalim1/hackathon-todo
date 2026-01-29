@@ -1,0 +1,44 @@
+# Default values for todo-app
+
+backend:
+  name: todo-backend
+  replicaCount: 2
+  image:
+    repository: todo-backend
+    tag: latest
+    pullPolicy: Never
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+frontend:
+  name: todo-frontend
+  replicaCount: 2
+  image:
+    repository: todo-frontend
+    tag: latest
+    pullPolicy: Never
+  service:
+    type: NodePort
+    port: 3000
+    nodePort: 30080
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+secrets:
+  databaseUrl: "cG9zdGdyZXNxbDovL25lb25kYl9vd25lcjpucGdfWDFJZHpFNGZZcXJLQGVwLXBvbGlzaGVkLW5pZ2h0LWFoanBteGloLXBvb2xlci5jLTMudXMtZWFzdC0xLmF3cy5uZW9uLnRlY2gvbmVvbmRiP3NzbG1vZGU9cmVxdWlyZSA="
+  openaiApiKey: "c2stcHJvai1KZmh5eEZpV1FHREFBb0hXOFBsU0xhd2RScFhkWUxZSXVucFo5SVFWSHlIcDhueWlsV01rRF9WdXJTMGJubzVzbTJpWlBzWW9wa1QzQmxia0ZKcE1TSUx1TjJ2OUpCZHc2S2tNWlNHazUwRnp6Yl93TDZtZkltTWVwRmRNay11dUE3djExU3JoYTRoU1VHUzV2X1ZsZlFsNG40RUE="
+  authSecret: "vumN8KogAWQCc614kzRDdPerDyfakgC47wzzPEPXtKs="
+  openaiDomainKey: ""

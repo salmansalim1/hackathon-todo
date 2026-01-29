@@ -1,0 +1,14 @@
+apiVersion: v2
+name: todo-app
+description: A Helm chart for Kubernetes Todo Application with AI Chatbot
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - todo
+  - chatbot
+  - openai
+  - postgresql
+maintainers:
+  - name: salmansalim1
+    url: https://github.com/salmansalim1

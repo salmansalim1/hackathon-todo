@@ -1,0 +1,48 @@
+# Default values for todo-app
+namespace: todo-app
+
+backend:
+  replicaCount: 2
+  image:
+    repository: todo-backend
+    tag: latest
+    pullPolicy: Never
+  service:
+    type: NodePort
+    port: 5000
+    nodePort: 30001
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  env:
+    PORT: "5000"
+    NODE_ENV: "production"
+
+frontend:
+  replicaCount: 2
+  image:
+    repository: todo-frontend
+    tag: latest
+    pullPolicy: Never
+  service:
+    type: NodePort
+    port: 3000
+    nodePort: 30000
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  env:
+    REACT_APP_API_URL: "http://todo-backend-service:5000"
+
+secrets:
+  # Base64 encoded values - copied from your secrets.yaml
+  databaseUrl: "cG9zdGdyZXNxbDovL25lb25kYl9vd25lcjpucGdfWDFJZHpFNGZZcXJLQGVwLXBvbGlzaGVkLW5pZ2h0LWFoanBteGloLXBvb2xlci5jLTMudXMtZWFzdC0xLmF3cy5uZW9uLnRlY2gvbmVvbmRiP3NzbG1vZGU9cmVxdWlyZQ=="
+  openaiApiKey: "c2stcHJvai1KZmh5eEZpV1FHREFBb0hXOFBsU0xhd2RScFhkWUxZSXVucFo5SVFWSHlIcDhueWlsV01rRF9WdXJTMGJubzVzbTJpWlBzWW9wa1QzQmxia0ZKcE1TSUx1TjJ2OUpCZHc2S2tNWlNHazUwRnp6Yl93TDZtZkltTWVwRmRNay11dUE3djExU3JoYTRoU1VHUzV2X1ZsZlFsNG40RUE="
